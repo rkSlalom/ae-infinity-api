@@ -1,7 +1,4 @@
 using AutoMapper;
-using AeInfinity.Application.Features.Products.Commands.CreateProduct;
-using AeInfinity.Application.Features.Products.Commands.UpdateProduct;
-using AeInfinity.Application.Features.Products.Queries.GetProducts;
 using AeInfinity.Domain.Entities;
 
 namespace AeInfinity.Application.Common.Mappings;
@@ -10,10 +7,11 @@ public class MappingProfile : Profile
 {
     public MappingProfile()
     {
-        // Product mappings
-        CreateMap<Product, ProductDto>();
-        CreateMap<CreateProductCommand, Product>();
-        CreateMap<UpdateProductCommand, Product>();
+        // Entity to DTO mappings will be added in future phases
+        // Example:
+        // CreateMap<User, UserDto>();
+        // CreateMap<List, ListDto>();
+        // CreateMap<ListItem, ListItemDto>();
     }
 }
 
