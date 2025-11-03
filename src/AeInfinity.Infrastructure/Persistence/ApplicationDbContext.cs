@@ -13,13 +13,12 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     {
     }
 
-    // DbSets will be added in Phase 2
-    // public DbSet<User> Users => Set<User>();
-    // public DbSet<Role> Roles => Set<Role>();
-    // public DbSet<List> Lists => Set<List>();
-    // public DbSet<UserToList> UserToLists => Set<UserToList>();
-    // public DbSet<Category> Categories => Set<Category>();
-    // public DbSet<ListItem> ListItems => Set<ListItem>();
+    public DbSet<User> Users => Set<User>();
+    public DbSet<Role> Roles => Set<Role>();
+    public DbSet<List> Lists => Set<List>();
+    public DbSet<UserToList> UserToLists => Set<UserToList>();
+    public DbSet<Category> Categories => Set<Category>();
+    public DbSet<ListItem> ListItems => Set<ListItem>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
