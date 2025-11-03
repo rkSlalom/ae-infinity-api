@@ -46,7 +46,7 @@ public class RemoveCollaboratorCommandHandler : IRequestHandler<RemoveCollaborat
 
         if (collaboration == null)
         {
-            throw new NotFoundException($"Collaborator not found on this list.");
+            throw new NotFoundException("Collaborator", request.CollaboratorUserId);
         }
 
         // Soft delete the collaboration

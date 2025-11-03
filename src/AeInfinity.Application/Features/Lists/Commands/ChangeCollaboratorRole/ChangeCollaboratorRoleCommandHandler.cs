@@ -55,7 +55,7 @@ public class ChangeCollaboratorRoleCommandHandler : IRequestHandler<ChangeCollab
 
         if (collaboration == null)
         {
-            throw new NotFoundException($"Collaborator not found on this list.");
+            throw new NotFoundException("Collaborator", request.CollaboratorUserId);
         }
 
         // Update the role

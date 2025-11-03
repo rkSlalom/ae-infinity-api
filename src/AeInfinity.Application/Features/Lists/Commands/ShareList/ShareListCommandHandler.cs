@@ -39,7 +39,7 @@ public class ShareListCommandHandler : IRequestHandler<ShareListCommand, Guid>
 
         if (invitee == null)
         {
-            throw new NotFoundException($"User with email '{request.InviteeEmail}' not found.");
+            throw new NotFoundException("User", request.InviteeEmail);
         }
 
         // Cannot invite yourself

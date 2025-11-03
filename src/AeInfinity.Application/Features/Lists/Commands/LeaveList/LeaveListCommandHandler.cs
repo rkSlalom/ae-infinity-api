@@ -40,7 +40,7 @@ public class LeaveListCommandHandler : IRequestHandler<LeaveListCommand, Unit>
 
         if (collaboration == null)
         {
-            throw new NotFoundException($"You are not a collaborator on this list.");
+            throw new NotFoundException("Collaboration", request.UserId);
         }
 
         // Soft delete the collaboration
