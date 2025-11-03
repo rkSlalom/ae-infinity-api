@@ -1,6 +1,7 @@
 using AeInfinity.Application.Common.Interfaces;
 using AeInfinity.Infrastructure.Persistence;
 using AeInfinity.Infrastructure.Persistence.Repositories;
+using AeInfinity.Infrastructure.Services;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -28,6 +29,10 @@ public static class DependencyInjection
 
         // Register repositories
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+
+        // Register services
+        services.AddScoped<IJwtTokenService, JwtTokenService>();
+        services.AddScoped<IPasswordHasher, PasswordHasherService>();
 
         return services;
     }
