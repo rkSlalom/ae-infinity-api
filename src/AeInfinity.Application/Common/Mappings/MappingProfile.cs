@@ -1,4 +1,5 @@
 using AutoMapper;
+using AeInfinity.Application.Common.Models.DTOs;
 using AeInfinity.Domain.Entities;
 
 namespace AeInfinity.Application.Common.Mappings;
@@ -7,11 +8,39 @@ public class MappingProfile : Profile
 {
     public MappingProfile()
     {
-        // Entity to DTO mappings will be added in future phases
-        // Example:
-        // CreateMap<User, UserDto>();
-        // CreateMap<List, ListDto>();
-        // CreateMap<ListItem, ListItemDto>();
+        // User mappings
+        CreateMap<User, UserDto>();
+        CreateMap<User, UserBasicDto>();
+
+        // Role mappings
+        CreateMap<Role, RoleDto>();
+
+        // Category mappings
+        CreateMap<Category, CategoryDto>();
+
+        // List mappings
+        CreateMap<List, ListDto>()
+            .ForMember(dest => dest.TotalItems, opt => opt.MapFrom(src => src.Items.Count))
+            .ForMember(dest => dest.PurchasedItems, opt => opt.MapFrom(src => src.Items.Count(i => i.IsPurchased)))
+            .ForMember(dest => dest.CollaboratorsCount, opt => opt.MapFrom(src => src.Collaborators.Count));
+        
+        CreateMap<List, ListDetailDto>()
+            .ForMember(dest => dest.TotalItems, opt => opt.MapFrom(src => src.Items.Count))
+            .ForMember(dest => dest.PurchasedItems, opt => opt.MapFrom(src => src.Items.Count(i => i.IsPurchased)))
+            .ForMember(dest => dest.CollaboratorsCount, opt => opt.MapFrom(src => src.Collaborators.Count));
+        
+        CreateMap<List, ListBasicDto>();
+
+        // UserToList (Collaborator) mappings
+        CreateMap<UserToList, CollaboratorDto>()
+            .ForMember(dest => dest.UserDisplayName, opt => opt.MapFrom(src => src.User.DisplayName))
+            .ForMember(dest => dest.UserAvatarUrl, opt => opt.MapFrom(src => src.User.AvatarUrl))
+            .ForMember(dest => dest.RoleName, opt => opt.MapFrom(src => src.Role.Name))
+            .ForMember(dest => dest.InvitedByDisplayName, opt => opt.MapFrom(src => src.InvitedByUser.DisplayName));
+
+        // ListItem mappings
+        CreateMap<ListItem, ListItemDto>();
+        CreateMap<ListItem, ListItemBasicDto>();
     }
 }
 
