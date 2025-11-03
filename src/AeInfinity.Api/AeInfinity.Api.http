@@ -1,0 +1,63 @@
+@baseUrl = http://localhost:5233
+@baseUrlHttps = https://localhost:7184
+
+### Health Check
+GET {{baseUrl}}/
+
+### Get all products
+GET {{baseUrl}}/api/products
+Accept: application/json
+
+### Get product by ID
+GET {{baseUrl}}/api/products/11111111-1111-1111-1111-111111111111
+Accept: application/json
+
+### Create a new product
+POST {{baseUrl}}/api/products
+Content-Type: application/json
+
+{
+  "name": "USB-C Cable",
+  "description": "High-quality USB-C charging cable",
+  "price": 19.99,
+  "stock": 200
+}
+
+### Update a product
+PUT {{baseUrl}}/api/products/11111111-1111-1111-1111-111111111111
+Content-Type: application/json
+
+{
+  "id": "11111111-1111-1111-1111-111111111111",
+  "name": "Laptop Pro",
+  "description": "High-performance laptop for developers - Updated",
+  "price": 1499.99,
+  "stock": 45,
+  "isActive": true
+}
+
+### Delete a product
+DELETE {{baseUrl}}/api/products/11111111-1111-1111-1111-111111111111
+
+### Test validation error (empty name)
+POST {{baseUrl}}/api/products
+Content-Type: application/json
+
+{
+  "name": "",
+  "description": "Test product",
+  "price": 10.00,
+  "stock": 5
+}
+
+### Test validation error (negative price)
+POST {{baseUrl}}/api/products
+Content-Type: application/json
+
+{
+  "name": "Test Product",
+  "description": "Test description",
+  "price": -10.00,
+  "stock": 5
+}
+
