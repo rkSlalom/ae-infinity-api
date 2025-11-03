@@ -60,10 +60,11 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .HasForeignKey(utl => utl.UserId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasMany(u => u.CreatedItems)
-            .WithOne(i => i.Creator)
-            .HasForeignKey(i => i.CreatedBy)
-            .OnDelete(DeleteBehavior.Restrict);
+        // Temporarily commented out for debugging
+        // builder.HasMany(u => u.CreatedItems)
+        //     .WithOne()
+        //     .HasForeignKey(i => i.CreatedBy)
+        //     .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasMany(u => u.CustomCategories)
             .WithOne(c => c.CustomOwner)

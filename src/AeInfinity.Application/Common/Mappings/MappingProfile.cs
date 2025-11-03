@@ -39,7 +39,8 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.InvitedByDisplayName, opt => opt.MapFrom(src => src.InvitedByUser.DisplayName));
 
         // ListItem mappings
-        CreateMap<ListItem, ListItemDto>();
+        CreateMap<ListItem, ListItemDto>()
+            .ForMember(dest => dest.Creator, opt => opt.Ignore()); // Creator loaded separately in queries if needed
         CreateMap<ListItem, ListItemBasicDto>();
     }
 }
