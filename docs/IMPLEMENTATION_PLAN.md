@@ -290,43 +290,44 @@ This document outlines a phased implementation approach for the AE Infinity coll
 ### Tasks:
 
 **Application Layer:**
-1. Create Queries:
+1. ✅ Create Queries:
    - `GetUserByIdQuery` and handler
-   - `SearchUsersQuery` (by email) and handler
-2. Create Commands:
+   - `SearchUsersQuery` (by email/display name) and handler
+2. ✅ Create Commands:
    - `UpdateUserProfileCommand`, handler, validator
    - `DeleteUserAccountCommand` and handler (soft delete)
-3. Create DTOs as needed
+3. ✅ Create DTOs as needed (`UpdateUserProfileRequest`)
 
 **API Layer:**
-1. Create `UsersController`:
+1. ✅ Create `UsersController`:
    - `GET /api/users/{id}`
    - `PUT /api/users/me`
    - `DELETE /api/users/me`
    - `GET /api/users/search?q={email}`
-2. Add authorization checks
-3. Test all endpoints
+2. ✅ Add authorization checks
+3. ✅ Test all endpoints
 
 ### Authorization:
-- Anyone can get user by ID (public info only)
-- Users can only update their own profile
-- Users can only delete their own account
-- Authenticated users can search for users (for sharing)
+- ✅ Anyone can get user by ID (public info only)
+- ✅ Users can only update their own profile
+- ✅ Users can only delete their own account
+- ✅ Authenticated users can search for users (for sharing)
 
 ### Validation:
-- Can view user profiles
-- Can update own profile
-- Can soft delete account
-- Search works with email query
-- Authorization enforced
+- ✅ Can view user profiles
+- ✅ Can update own profile
+- ✅ Can soft delete account
+- ✅ Search works with email/display name query
+- ✅ Authorization enforced
 
 ### Deliverables:
-- [ ] 2 queries, 2 commands with handlers and validators
-- [ ] UsersController with 4 endpoints
-- [ ] All endpoints tested
-- [ ] Authorization working
+- [x] 2 queries, 2 commands with handlers and validators
+- [x] UsersController with 4 endpoints
+- [x] All endpoints tested
+- [x] Authorization working
 
-**Estimated Time:** 4-5 hours
+**Estimated Time:** 4-5 hours  
+**Status:** ✅ **COMPLETED**
 
 ---
 
