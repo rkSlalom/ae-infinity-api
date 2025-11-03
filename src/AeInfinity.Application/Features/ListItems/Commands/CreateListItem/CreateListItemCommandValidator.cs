@@ -1,11 +1,17 @@
+using AeInfinity.Application.Common.Interfaces;
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 
 namespace AeInfinity.Application.Features.ListItems.Commands.CreateListItem;
 
 public class CreateListItemCommandValidator : AbstractValidator<CreateListItemCommand>
 {
-    public CreateListItemCommandValidator()
+    private readonly IApplicationDbContext _context;
+
+    public CreateListItemCommandValidator(IApplicationDbContext context)
     {
+        _context = context;
+
         RuleFor(x => x.ListId)
             .NotEmpty()
             .WithMessage("List ID is required.");
@@ -31,7 +37,9 @@ public class CreateListItemCommandValidator : AbstractValidator<CreateListItemCo
 
         RuleFor(x => x.CategoryId)
             .NotEmpty()
-            .WithMessage("Category is required.");
+            .WithMessage("Category is required.")
+            .MustAsync(CategoryExists)
+            .WithMessage("The specified category does not exist. Please use a valid category ID.");
 
         RuleFor(x => x.Notes)
             .MaximumLength(1000)
@@ -42,6 +50,12 @@ public class CreateListItemCommandValidator : AbstractValidator<CreateListItemCo
             .MaximumLength(2048)
             .WithMessage("Image URL must not exceed 2048 characters.")
             .When(x => !string.IsNullOrEmpty(x.ImageUrl));
+    }
+
+    private async Task<bool> CategoryExists(Guid categoryId, CancellationToken cancellationToken)
+    {
+        return await _context.Categories
+            .AnyAsync(c => c.Id == categoryId, cancellationToken);
     }
 }
 

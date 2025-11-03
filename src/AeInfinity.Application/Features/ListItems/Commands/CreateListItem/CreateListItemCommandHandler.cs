@@ -26,6 +26,17 @@ public class CreateListItemCommandHandler : IRequestHandler<CreateListItemComman
             throw new ForbiddenException("You do not have access to this list.");
         }
 
+        // Verify category exists (additional safety check beyond validator)
+        var categoryExists = await _context.Categories
+            .AnyAsync(c => c.Id == request.CategoryId, cancellationToken);
+        
+        if (!categoryExists)
+        {
+            throw new Domain.Exceptions.ValidationException(
+                "CategoryId", 
+                "The specified category does not exist. Please provide a valid category ID.");
+        }
+
         // For prototype, we'll allow anyone with access to create items
         // In full implementation, we'd check CanCreateItems permission from role
 

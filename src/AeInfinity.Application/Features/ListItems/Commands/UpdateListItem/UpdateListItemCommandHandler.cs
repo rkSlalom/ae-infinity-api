@@ -33,6 +33,17 @@ public class UpdateListItemCommandHandler : IRequestHandler<UpdateListItemComman
             throw new NotFoundException("ListItem", request.ItemId);
         }
 
+        // Verify category exists (additional safety check beyond validator)
+        var categoryExists = await _context.Categories
+            .AnyAsync(c => c.Id == request.CategoryId, cancellationToken);
+        
+        if (!categoryExists)
+        {
+            throw new ValidationException(
+                "CategoryId", 
+                "The specified category does not exist. Please provide a valid category ID.");
+        }
+
         // For prototype, we'll allow anyone with access to edit items
         // In full implementation with Editor-Limited, we'd check:
         // if (isEditorLimited && item.CreatedBy != request.UserId)

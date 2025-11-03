@@ -1,11 +1,17 @@
+using AeInfinity.Application.Common.Interfaces;
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 
 namespace AeInfinity.Application.Features.ListItems.Commands.UpdateListItem;
 
 public class UpdateListItemCommandValidator : AbstractValidator<UpdateListItemCommand>
 {
-    public UpdateListItemCommandValidator()
+    private readonly IApplicationDbContext _context;
+
+    public UpdateListItemCommandValidator(IApplicationDbContext context)
     {
+        _context = context;
+
         RuleFor(x => x.ListId)
             .NotEmpty()
             .WithMessage("List ID is required.");
@@ -35,7 +41,9 @@ public class UpdateListItemCommandValidator : AbstractValidator<UpdateListItemCo
 
         RuleFor(x => x.CategoryId)
             .NotEmpty()
-            .WithMessage("Category is required.");
+            .WithMessage("Category is required.")
+            .MustAsync(CategoryExists)
+            .WithMessage("The specified category does not exist. Please use a valid category ID.");
 
         RuleFor(x => x.Notes)
             .MaximumLength(1000)
@@ -50,6 +58,12 @@ public class UpdateListItemCommandValidator : AbstractValidator<UpdateListItemCo
         RuleFor(x => x.Position)
             .GreaterThanOrEqualTo(0)
             .WithMessage("Position must be greater than or equal to 0.");
+    }
+
+    private async Task<bool> CategoryExists(Guid categoryId, CancellationToken cancellationToken)
+    {
+        return await _context.Categories
+            .AnyAsync(c => c.Id == categoryId, cancellationToken);
     }
 }
 

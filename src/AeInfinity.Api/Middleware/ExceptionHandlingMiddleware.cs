@@ -2,6 +2,8 @@ using System.Net;
 using System.Text.Json;
 using AeInfinity.Domain.Exceptions;
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Data.Sqlite;
 
 namespace AeInfinity.Api.Middleware;
 
@@ -43,9 +45,10 @@ public class ExceptionHandlingMiddleware
 
         switch (exception)
         {
-            case FluentValidation.ValidationException validationException:
+            case FluentValidation.ValidationException fluentValidationException:
                 errorResponse.StatusCode = (int)HttpStatusCode.BadRequest;
-                errorResponse.Errors = validationException.Errors
+                errorResponse.Message = "One or more validation errors occurred.";
+                errorResponse.Errors = fluentValidationException.Errors
                     .Select(e => new ValidationError
                     {
                         Property = e.PropertyName,
@@ -54,12 +57,45 @@ public class ExceptionHandlingMiddleware
                     .ToList();
                 break;
 
+            case AeInfinity.Domain.Exceptions.ValidationException domainValidationException:
+                errorResponse.StatusCode = (int)HttpStatusCode.BadRequest;
+                errorResponse.Message = domainValidationException.Message;
+                errorResponse.Errors = domainValidationException.Errors
+                    .SelectMany(e => e.Value.Select(errorMessage => new ValidationError
+                    {
+                        Property = e.Key,
+                        Message = errorMessage
+                    }))
+                    .ToList();
+                break;
+
             case NotFoundException:
                 errorResponse.StatusCode = (int)HttpStatusCode.NotFound;
                 break;
 
+            case UnauthorizedException:
+                errorResponse.StatusCode = (int)HttpStatusCode.Unauthorized;
+                break;
+
+            case ForbiddenException:
+                errorResponse.StatusCode = (int)HttpStatusCode.Forbidden;
+                break;
+
             case DomainException:
                 errorResponse.StatusCode = (int)HttpStatusCode.BadRequest;
+                break;
+
+            case DbUpdateException dbUpdateEx when dbUpdateEx.InnerException is SqliteException sqliteEx:
+                errorResponse.StatusCode = (int)HttpStatusCode.BadRequest;
+                errorResponse.Message = GetFriendlyDatabaseErrorMessage(sqliteEx);
+                errorResponse.Errors = new List<ValidationError>
+                {
+                    new ValidationError
+                    {
+                        Property = "Database",
+                        Message = GetFriendlyDatabaseErrorMessage(sqliteEx)
+                    }
+                };
                 break;
 
             default:
@@ -69,6 +105,44 @@ public class ExceptionHandlingMiddleware
 
         response.StatusCode = errorResponse.StatusCode;
         await response.WriteAsync(JsonSerializer.Serialize(errorResponse));
+    }
+
+    private static string GetFriendlyDatabaseErrorMessage(SqliteException sqliteException)
+    {
+        // SQLite Error 19 is constraint violation
+        if (sqliteException.SqliteErrorCode == 19)
+        {
+            var message = sqliteException.Message.ToLower();
+            
+            if (message.Contains("foreign key"))
+            {
+                if (message.Contains("categoryid") || message.Contains("category_id"))
+                {
+                    return "The specified category does not exist. Please provide a valid category ID.";
+                }
+                if (message.Contains("listid") || message.Contains("list_id"))
+                {
+                    return "The specified list does not exist.";
+                }
+                if (message.Contains("userid") || message.Contains("user_id"))
+                {
+                    return "The specified user does not exist.";
+                }
+                return "A referenced record does not exist. Please check your input values.";
+            }
+
+            if (message.Contains("unique"))
+            {
+                return "A record with this value already exists.";
+            }
+
+            if (message.Contains("not null"))
+            {
+                return "A required field is missing.";
+            }
+        }
+
+        return "A database constraint was violated. Please check your input.";
     }
 }
 
