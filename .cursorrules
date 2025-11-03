@@ -1,0 +1,362 @@
+# AI Agent Rules for AE Infinity API
+
+## Project Overview
+This is a .NET 9.0 Clean Architecture Web API project with CQRS pattern, using SQLite in-memory database.
+
+**All development must reference the context repository:**
+```
+../ae-infinity-context/
+```
+
+## 📚 Required Context Files
+
+When implementing features, ALWAYS reference these specifications:
+
+1. **[PROJECT_SPEC.md](../ae-infinity-context/PROJECT_SPEC.md)** - Project requirements and features
+2. **[ARCHITECTURE.md](../ae-infinity-context/ARCHITECTURE.md)** - System architecture and patterns
+3. **[API_SPEC.md](../ae-infinity-context/API_SPEC.md)** - Complete API specification
+4. **[COMPONENT_SPEC.md](../ae-infinity-context/COMPONENT_SPEC.md)** - UI component specifications
+5. **[USER_PERSONAS.md](../ae-infinity-context/USER_PERSONAS.md)** - User roles and permissions
+6. **[DEVELOPMENT_GUIDE.md](../ae-infinity-context/DEVELOPMENT_GUIDE.md)** - Coding standards
+
+## 🎨 UI Development Guidelines
+
+### Additional UI-specific documentation:
+- [docs/DEVELOPMENT_PATTERNS.md](../ae-infinity-ui/docs/DEVELOPMENT_PATTERNS.md) - Development patterns
+- [docs/API_INTEGRATION_GUIDE.md](../ae-infinity-ui/docs/API_INTEGRATION_GUIDE.md) - API integration
+- [docs/COMPONENT_PATTERNS.md](../ae-infinity-ui/docs/COMPONENT_PATTERNS.md) - Component guidelines
+- [docs/STATE_MANAGEMENT_GUIDE.md](../ae-infinity-ui/docs/STATE_MANAGEMENT_GUIDE.md) - State management
+- [docs/PROJECT_STRUCTURE.md](../ae-infinity-ui/docs/PROJECT_STRUCTURE.md) - Directory structure
+
+
+---
+
+## ARCHITECTURE RULES
+
+### ✅ MUST DO
+
+1. **Respect Clean Architecture Layers**
+   - Domain layer MUST have NO dependencies on other layers
+   - Application layer can ONLY depend on Domain
+   - Infrastructure layer can depend on Application and Domain
+   - API layer can depend on all layers but implements presentation logic only
+
+2. **Follow CQRS Pattern**
+   - Separate all operations into Commands (writes) and Queries (reads)
+   - Use MediatR for all commands and queries
+   - Place commands in `Features/{Feature}/Commands/`
+   - Place queries in `Features/{Feature}/Queries/`
+
+3. **Maintain Consistency**
+   - Follow existing naming conventions
+   - Use existing patterns for new features
+   - Keep folder structure consistent
+
+4. **Validation**
+   - ALL commands MUST have FluentValidation validators
+   - Validators MUST be in the same folder as their commands
+   - Use clear, user-friendly validation messages
+
+5. **Error Handling**
+   - Use domain exceptions for business logic violations
+   - Let the ExceptionHandlingMiddleware handle all exceptions
+   - Return appropriate HTTP status codes
+
+6. **Data Transfer**
+   - Use DTOs for all API responses
+   - Use AutoMapper for entity-to-DTO mappings
+   - Keep DTOs in the Query folders alongside their handlers
+
+---
+
+### ❌ MUST NOT DO
+
+1. **DO NOT Break Architecture Boundaries**
+   - NEVER reference Infrastructure from Application
+   - NEVER reference Application or Infrastructure from Domain
+   - NEVER put business logic in Controllers or API layer
+
+2. **DO NOT Bypass Patterns**
+   - NEVER create direct database calls in controllers
+   - NEVER skip MediatR for business operations
+   - NEVER skip validation for commands
+   - NEVER expose entities directly through API endpoints
+
+3. **DO NOT Mix Concerns**
+   - NEVER put data access code in Application layer (use interfaces)
+   - NEVER put business logic in Infrastructure layer
+   - NEVER put validation logic in controllers
+
+4. **DO NOT Compromise Security**
+   - NEVER expose sensitive data in error messages
+   - NEVER skip input validation
+   - NEVER commit secrets or connection strings
+
+5. **DO NOT Break Conventions**
+   - NEVER use different patterns than established in the codebase
+   - NEVER ignore existing abstractions
+   - NEVER create duplicate functionality
+
+---
+
+## CODING STANDARDS
+
+### ✅ MUST DO
+
+1. **Code Quality**
+   - Write clean, readable code
+   - Use meaningful variable and method names
+   - Add XML comments for public APIs
+   - Keep methods small and focused (single responsibility)
+
+2. **Async/Await**
+   - Use async/await for all I/O operations
+   - Always pass CancellationToken to async methods
+   - Use ConfigureAwait(false) when appropriate
+
+3. **Dependency Injection**
+   - Register all services in DependencyInjection.cs files
+   - Use appropriate service lifetimes (Scoped, Singleton, Transient)
+   - Inject interfaces, not concrete implementations
+
+4. **Testing Mindset**
+   - Write testable code
+   - Avoid hard dependencies
+   - Use dependency injection for flexibility
+
+5. **Documentation**
+   - Update README.md when adding major features
+   - Add comments for complex business logic
+   - Document API endpoints with XML comments
+
+---
+
+### ❌ MUST NOT DO
+
+1. **DO NOT Write Bad Code**
+   - NEVER leave commented-out code
+   - NEVER use magic numbers (use constants)
+   - NEVER ignore compiler warnings
+   - NEVER use var when type isn't obvious
+
+2. **DO NOT Ignore Performance**
+   - NEVER load entire collections unnecessarily
+   - NEVER use blocking calls in async methods
+   - NEVER create N+1 query problems
+   - NEVER ignore memory leaks
+
+3. **DO NOT Skip Error Handling**
+   - NEVER swallow exceptions without logging
+   - NEVER use empty catch blocks
+   - NEVER return null when exceptions are more appropriate
+
+---
+
+## DATABASE RULES
+
+### ✅ MUST DO
+
+1. **Entity Framework**
+   - Use DbContext through IApplicationDbContext interface
+   - Configure entities using IEntityTypeConfiguration
+   - Place configurations in Infrastructure/Persistence/Configurations/
+   - Use appropriate column types and constraints
+
+2. **Migrations** (when not using in-memory)
+   - Create migrations for all schema changes
+   - Test migrations in development before production
+   - Never modify existing migrations
+
+3. **Queries**
+   - Use AsNoTracking() for read-only queries
+   - Use proper filtering to avoid loading unnecessary data
+   - Consider pagination for large result sets
+
+---
+
+### ❌ MUST NOT DO
+
+1. **DO NOT Violate Data Access Rules**
+   - NEVER use DbContext directly in Application layer
+   - NEVER create entities without proper validation
+   - NEVER modify entities without updating UpdatedAt timestamp
+   - NEVER expose DbSet<> directly outside Infrastructure
+
+---
+
+## API DESIGN RULES
+
+### ✅ MUST DO
+
+1. **RESTful Conventions**
+   - Use appropriate HTTP verbs (GET, POST, PUT, DELETE)
+   - Return proper status codes (200, 201, 204, 400, 404, 500)
+   - Use plural nouns for resource names (/api/products)
+   - Use route parameters for IDs (/api/products/{id})
+
+2. **Request/Response**
+   - Validate all inputs
+   - Return consistent response formats
+   - Include appropriate HTTP headers
+   - Use DTOs for all responses
+
+3. **Documentation**
+   - Use XML comments for Swagger documentation
+   - Include ProducesResponseType attributes
+   - Document error responses
+
+---
+
+### ❌ MUST NOT DO
+
+1. **DO NOT Create Bad APIs**
+   - NEVER use verbs in endpoint URLs
+   - NEVER expose implementation details in responses
+   - NEVER return different formats for same endpoint
+   - NEVER skip versioning for production APIs
+
+---
+
+## FEATURE DEVELOPMENT WORKFLOW
+
+### When Adding a New Feature:
+
+1. **Domain Layer First**
+   - Create entity in Domain/Entities/
+   - Add domain exceptions if needed
+   - Define value objects if appropriate
+
+2. **Application Layer Second**
+   - Create feature folder in Application/Features/{FeatureName}/
+   - Add Commands with handlers and validators
+   - Add Queries with handlers and DTOs
+   - Update AutoMapper profile
+
+3. **Infrastructure Layer Third**
+   - Add entity configuration in Persistence/Configurations/
+   - Update IApplicationDbContext interface
+   - Add DbSet to ApplicationDbContext
+   - Implement any infrastructure services needed
+
+4. **API Layer Last**
+   - Create controller in API/Controllers/
+   - Add endpoints with proper attributes
+   - Add XML documentation
+   - Test endpoints
+
+5. **Verify**
+   - Build solution
+   - Test all endpoints
+   - Update README if needed
+   - Check no architecture violations
+
+---
+
+## SQLITE IN-MEMORY DATABASE RULES
+
+### ✅ MUST DO
+
+1. **Connection Management**
+   - Keep the singleton SqliteConnection alive
+   - Use shared cache mode
+   - Initialize database on startup
+
+2. **Seed Data**
+   - Add seed data in entity configurations
+   - Use consistent GUIDs for test data
+   - Include realistic sample data
+
+---
+
+### ❌ MUST NOT DO
+
+1. **DO NOT Break In-Memory DB**
+   - NEVER close the keep-alive connection
+   - NEVER change connection lifetime to Scoped/Transient
+   - NEVER assume data persists between app restarts
+
+---
+
+## PACKAGE MANAGEMENT
+
+### ✅ MUST DO
+
+1. **NuGet Packages**
+   - Use compatible versions across projects
+   - Update README when adding major dependencies
+   - Keep package versions consistent
+
+---
+
+### ❌ MUST NOT DO
+
+1. **DO NOT Create Dependency Issues**
+   - NEVER add packages to wrong layers (e.g., EF Core to Domain)
+   - NEVER use conflicting package versions
+   - NEVER add unnecessary dependencies
+
+---
+
+## LOGGING & MONITORING
+
+### ✅ MUST DO
+
+1. **Logging**
+   - Use Serilog for all logging
+   - Log important business operations
+   - Log errors with full context
+   - Use appropriate log levels (Debug, Info, Warning, Error)
+
+2. **Exception Handling**
+   - Let middleware handle exceptions
+   - Log exceptions before handling
+   - Return user-friendly error messages
+
+---
+
+### ❌ MUST NOT DO
+
+1. **DO NOT Log Incorrectly**
+   - NEVER log sensitive data (passwords, tokens, etc.)
+   - NEVER use Console.WriteLine for logging
+   - NEVER swallow exceptions without logging
+
+---
+
+## GENERAL PRINCIPLES
+
+### ✅ Always Follow:
+
+- **SOLID Principles**
+- **DRY (Don't Repeat Yourself)**
+- **KISS (Keep It Simple, Stupid)**
+- **YAGNI (You Aren't Gonna Need It)**
+- **Separation of Concerns**
+- **Dependency Inversion**
+
+### ❌ Never Do:
+
+- **Premature Optimization**
+- **Over-Engineering**
+- **Tight Coupling**
+- **God Objects/Classes**
+- **Breaking Changes Without Discussion**
+
+---
+
+## WHEN IN DOUBT
+
+1. **Look at existing code** - Follow established patterns
+2. **Ask before breaking conventions** - Discuss architectural changes
+3. **Prioritize maintainability** - Code is read more than written
+4. **Think about testability** - Make code easy to test
+5. **Consider the future** - Write code others can understand
+
+---
+
+## SUMMARY
+
+**The Golden Rule:** Maintain Clean Architecture principles, follow CQRS pattern, write clean and testable code, and always prioritize maintainability over cleverness.
+
+**Remember:** This codebase should be easy to understand, easy to test, and easy to extend. Every change should make it better, not more complex.
+
