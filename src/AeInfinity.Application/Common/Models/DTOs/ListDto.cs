@@ -22,6 +22,7 @@ public class ListDetailDto : ListDto
 {
     public List<CollaboratorDto> Collaborators { get; set; } = new();
     public List<ListItemDto> Items { get; set; } = new();
+    public string? UserRole { get; set; } // Current user's role for this list
 }
 
 public class ListBasicDto

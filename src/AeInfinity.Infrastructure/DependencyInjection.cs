@@ -33,6 +33,7 @@ public static class DependencyInjection
         // Register services
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<IPasswordHasher, PasswordHasherService>();
+        services.AddScoped<IListPermissionService, ListPermissionService>();
 
         return services;
     }
