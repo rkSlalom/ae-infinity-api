@@ -1,6 +1,8 @@
 using AeInfinity.Application.Common.Models.DTOs;
 using AeInfinity.Application.Features.Auth.Commands.Login;
+using AeInfinity.Application.Features.Auth.Commands.Logout;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AeInfinity.Api.Controllers;
@@ -36,6 +38,22 @@ public class AuthController : BaseApiController
 
         var result = await _mediator.Send(command);
         return Ok(result);
+    }
+
+    /// <summary>
+    /// User logout
+    /// </summary>
+    /// <returns>Success response</returns>
+    [Authorize]
+    [HttpPost("logout")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> Logout()
+    {
+        var command = new LogoutCommand();
+        await _mediator.Send(command);
+        
+        return NoContent();
     }
 }
 

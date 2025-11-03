@@ -1,0 +1,61 @@
+### AE Infinity API - Authentication & User Tests
+@baseUrl = http://localhost:5233/api
+@token = 
+
+### 1. Login as Sarah
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "sarah@example.com",
+  "password": "Password123!"
+}
+
+### 2. Login as Alex
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "alex@example.com",
+  "password": "Password123!"
+}
+
+### 3. Login as Mike
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "mike@example.com",
+  "password": "Password123!"
+}
+
+### 4. Get Current User (requires authentication)
+# First login to get token, then copy it to @token variable above
+GET {{baseUrl}}/users/me
+Authorization: Bearer {{token}}
+
+### 5. Logout (requires authentication)
+POST {{baseUrl}}/auth/logout
+Authorization: Bearer {{token}}
+
+### 6. Test Unauthorized Access
+GET {{baseUrl}}/users/me
+
+### 7. Test Login with Invalid Credentials
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "sarah@example.com",
+  "password": "WrongPassword"
+}
+
+### 8. Test Login with Non-existent User
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "nonexistent@example.com",
+  "password": "Password123!"
+}
+
