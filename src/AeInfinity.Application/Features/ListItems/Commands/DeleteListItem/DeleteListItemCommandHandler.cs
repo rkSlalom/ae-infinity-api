@@ -9,11 +9,16 @@ public class DeleteListItemCommandHandler : IRequestHandler<DeleteListItemComman
 {
     private readonly IApplicationDbContext _context;
     private readonly IListPermissionService _permissionService;
+    private readonly IRealtimeNotificationService _realtimeService;
 
-    public DeleteListItemCommandHandler(IApplicationDbContext context, IListPermissionService permissionService)
+    public DeleteListItemCommandHandler(
+        IApplicationDbContext context, 
+        IListPermissionService permissionService,
+        IRealtimeNotificationService realtimeService)
     {
         _context = context;
         _permissionService = permissionService;
+        _realtimeService = realtimeService;
     }
 
     public async Task<Unit> Handle(DeleteListItemCommand request, CancellationToken cancellationToken)
@@ -41,6 +46,15 @@ public class DeleteListItemCommandHandler : IRequestHandler<DeleteListItemComman
         // Soft delete
         _context.ListItems.Remove(item);
         await _context.SaveChangesAsync(cancellationToken);
+
+        // Broadcast real-time event
+        // Frontend expects: { listId, itemId, timestamp }
+        await _realtimeService.NotifyItemDeletedAsync(request.ListId, new
+        {
+            ListId = request.ListId,
+            ItemId = item.Id,
+            Timestamp = DateTime.UtcNow
+        });
 
         return Unit.Value;
     }

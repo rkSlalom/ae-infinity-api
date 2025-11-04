@@ -1,7 +1,10 @@
 using System.Text;
 using AeInfinity.Api.Extensions;
+using AeInfinity.Api.Hubs;
 using AeInfinity.Api.Middleware;
+using AeInfinity.Api.Services.Realtime;
 using AeInfinity.Application;
+using AeInfinity.Application.Common.Interfaces;
 using AeInfinity.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -18,7 +21,12 @@ Log.Logger = new LoggerConfiguration()
 builder.Host.UseSerilog();
 
 // Add services to the container
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        // Use camelCase for JSON serialization (JavaScript/TypeScript standard)
+        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+    });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -56,18 +64,55 @@ builder.Services.AddAuthentication(options =>
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
         ClockSkew = TimeSpan.Zero
     };
+
+    // Configure JWT authentication for SignalR
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            // Allow SignalR to read token from query string
+            var accessToken = context.Request.Query["access_token"];
+            var path = context.HttpContext.Request.Path;
+
+            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+            {
+                context.Token = accessToken;
+            }
+
+            return Task.CompletedTask;
+        }
+    };
 });
 
 builder.Services.AddAuthorization();
 
-// Add CORS
+// Add SignalR
+builder.Services.AddSignalR(options =>
+{
+    // Configure SignalR options
+    options.EnableDetailedErrors = builder.Environment.IsDevelopment();
+    options.KeepAliveInterval = TimeSpan.FromSeconds(15);
+    options.ClientTimeoutInterval = TimeSpan.FromSeconds(30);
+})
+.AddJsonProtocol(options =>
+{
+    // Use camelCase for SignalR JSON serialization
+    options.PayloadSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+});
+
+// Register realtime services
+builder.Services.AddSingleton<IConnectionManager, ConnectionManager>();
+builder.Services.AddScoped<IRealtimeNotificationService, RealtimeNotificationService>();
+
+// Add CORS with WebSocket support
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.AllowAnyOrigin()
+        policy.WithOrigins("http://localhost:5173", "http://localhost:3000") // Frontend URLs
               .AllowAnyMethod()
-              .AllowAnyHeader();
+              .AllowAnyHeader()
+              .AllowCredentials(); // Required for SignalR WebSocket
     });
 });
 
@@ -79,6 +124,9 @@ await app.InitializeDatabaseAsync();
 // Configure the HTTP request pipeline
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
+// CORS must be before authentication and authorization
+app.UseCors("AllowAll");
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -89,13 +137,22 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.UseHttpsRedirection();
-app.UseCors("AllowAll");
+// Disable HTTPS redirection in development for easier testing
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
+
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Map SignalR hubs with CORS
+app.MapHub<ShoppingListHub>("/hubs/shopping-list")
+   .RequireCors("AllowAll");
+
 app.MapControllers();
 
-Log.Information("Starting AE Infinity API...");
+Log.Information("Starting AE Infinity API with SignalR support...");
 
 app.Run();
 

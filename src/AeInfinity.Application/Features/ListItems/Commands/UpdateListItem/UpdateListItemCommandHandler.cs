@@ -9,11 +9,16 @@ public class UpdateListItemCommandHandler : IRequestHandler<UpdateListItemComman
 {
     private readonly IApplicationDbContext _context;
     private readonly IListPermissionService _permissionService;
+    private readonly IRealtimeNotificationService _realtimeService;
 
-    public UpdateListItemCommandHandler(IApplicationDbContext context, IListPermissionService permissionService)
+    public UpdateListItemCommandHandler(
+        IApplicationDbContext context, 
+        IListPermissionService permissionService,
+        IRealtimeNotificationService realtimeService)
     {
         _context = context;
         _permissionService = permissionService;
+        _realtimeService = realtimeService;
     }
 
     public async Task<Unit> Handle(UpdateListItemCommand request, CancellationToken cancellationToken)
@@ -58,6 +63,28 @@ public class UpdateListItemCommandHandler : IRequestHandler<UpdateListItemComman
         item.Position = request.Position;
 
         await _context.SaveChangesAsync(cancellationToken);
+
+        // Broadcast real-time event
+        // Frontend expects: { listId, item: {...}, timestamp }
+        await _realtimeService.NotifyItemUpdatedAsync(request.ListId, new
+        {
+            ListId = request.ListId,
+            Item = new
+            {
+                Id = item.Id,
+                ListId = item.ListId,
+                Name = item.Name,
+                Quantity = item.Quantity,
+                Unit = item.Unit,
+                CategoryId = item.CategoryId,
+                Notes = item.Notes,
+                ImageUrl = item.ImageUrl,
+                Position = item.Position,
+                IsPurchased = item.IsPurchased,
+                UpdatedAt = DateTime.UtcNow
+            },
+            Timestamp = DateTime.UtcNow
+        });
 
         return Unit.Value;
     }

@@ -10,11 +10,16 @@ public class CreateListItemCommandHandler : IRequestHandler<CreateListItemComman
 {
     private readonly IApplicationDbContext _context;
     private readonly IListPermissionService _permissionService;
+    private readonly IRealtimeNotificationService _realtimeService;
 
-    public CreateListItemCommandHandler(IApplicationDbContext context, IListPermissionService permissionService)
+    public CreateListItemCommandHandler(
+        IApplicationDbContext context, 
+        IListPermissionService permissionService,
+        IRealtimeNotificationService realtimeService)
     {
         _context = context;
         _permissionService = permissionService;
+        _realtimeService = realtimeService;
     }
 
     public async Task<Guid> Handle(CreateListItemCommand request, CancellationToken cancellationToken)
@@ -61,6 +66,28 @@ public class CreateListItemCommandHandler : IRequestHandler<CreateListItemComman
 
         _context.ListItems.Add(item);
         await _context.SaveChangesAsync(cancellationToken);
+
+        // Broadcast real-time event
+        // Frontend expects: { listId, item: {...}, timestamp }
+        await _realtimeService.NotifyItemAddedAsync(request.ListId, new
+        {
+            ListId = request.ListId,
+            Item = new
+            {
+                Id = item.Id,
+                ListId = item.ListId,
+                Name = item.Name,
+                Quantity = item.Quantity,
+                Unit = item.Unit,
+                CategoryId = item.CategoryId,
+                Notes = item.Notes,
+                ImageUrl = item.ImageUrl,
+                Position = item.Position,
+                IsPurchased = item.IsPurchased,
+                CreatedAt = item.CreatedAt
+            },
+            Timestamp = DateTime.UtcNow
+        });
 
         return item.Id;
     }

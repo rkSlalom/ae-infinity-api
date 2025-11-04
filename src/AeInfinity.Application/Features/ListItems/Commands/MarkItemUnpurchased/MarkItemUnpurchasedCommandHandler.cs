@@ -9,11 +9,16 @@ public class MarkItemUnpurchasedCommandHandler : IRequestHandler<MarkItemUnpurch
 {
     private readonly IApplicationDbContext _context;
     private readonly IListPermissionService _permissionService;
+    private readonly IRealtimeNotificationService _realtimeService;
 
-    public MarkItemUnpurchasedCommandHandler(IApplicationDbContext context, IListPermissionService permissionService)
+    public MarkItemUnpurchasedCommandHandler(
+        IApplicationDbContext context, 
+        IListPermissionService permissionService,
+        IRealtimeNotificationService realtimeService)
     {
         _context = context;
         _permissionService = permissionService;
+        _realtimeService = realtimeService;
     }
 
     public async Task<Unit> Handle(MarkItemUnpurchasedCommand request, CancellationToken cancellationToken)
@@ -43,6 +48,18 @@ public class MarkItemUnpurchasedCommandHandler : IRequestHandler<MarkItemUnpurch
         item.PurchasedBy = null;
 
         await _context.SaveChangesAsync(cancellationToken);
+
+        // Broadcast real-time event
+        // Frontend expects: { listId, itemId, isPurchased, purchasedBy, purchasedAt, timestamp }
+        await _realtimeService.NotifyItemPurchasedStatusChangedAsync(request.ListId, new
+        {
+            ListId = request.ListId,
+            ItemId = item.Id,
+            IsPurchased = false,
+            PurchasedBy = (Guid?)null,
+            PurchasedAt = (DateTime?)null,
+            Timestamp = DateTime.UtcNow
+        });
 
         return Unit.Value;
     }

@@ -119,3 +119,9 @@ appsettings.*.json
 !appsettings.json
 !appsettings.Development.json
 
+# SQLite Database Files
+App_Data/
+*.db
+*.db-shm
+*.db-wal
+

@@ -13,16 +13,27 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
-        // Create a persistent SQLite in-memory connection
-        var keepAliveConnection = new SqliteConnection("DataSource=InMemoryDb;Mode=Memory;Cache=Shared");
-        keepAliveConnection.Open();
+        // Use file-based SQLite for better concurrency support
+        // This avoids the "unable to delete/modify user-function" error with shared in-memory connections
+        var dbPath = Path.Combine(AppContext.BaseDirectory, "App_Data", "ae-infinity.db");
+        var dbDirectory = Path.GetDirectoryName(dbPath);
         
-        // Register the connection as singleton to keep it alive
-        services.AddSingleton(keepAliveConnection);
+        // Ensure the directory exists
+        if (!Directory.Exists(dbDirectory))
+        {
+            Directory.CreateDirectory(dbDirectory!);
+        }
+        
+        var connectionString = $"Data Source={dbPath};Cache=Shared;Pooling=True";
 
-        // SQLite In-Memory Database with shared cache
+        // File-based SQLite Database with connection pooling
         services.AddDbContext<ApplicationDbContext>(options =>
-            options.UseSqlite(keepAliveConnection));
+            options.UseSqlite(connectionString, sqliteOptions =>
+            {
+                sqliteOptions.CommandTimeout(30); // 30 seconds timeout
+            })
+            .EnableSensitiveDataLogging() // Helpful for debugging
+            .EnableDetailedErrors());
 
         services.AddScoped<IApplicationDbContext>(provider => 
             provider.GetRequiredService<ApplicationDbContext>());
