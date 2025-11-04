@@ -13,6 +13,9 @@ using AeInfinity.Application.Features.Lists.Queries.GetListById;
 using AeInfinity.Application.Features.Lists.Queries.GetListCollaborators;
 using AeInfinity.Application.Features.Lists.Queries.GetListInvitations;
 using AeInfinity.Application.Features.Lists.Queries.GetLists;
+using AeInfinity.Application.Features.Statistics.Queries.GetListStats;
+using AeInfinity.Application.Features.Statistics.Queries.GetListPurchaseHistory;
+using AeInfinity.Application.Features.Statistics.Queries.GetListActivity;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -385,6 +388,118 @@ public class ListsController : BaseApiController
 
         await _mediator.Send(command);
         return NoContent();
+    }
+
+    /// <summary>
+    /// Get statistics for a specific list
+    /// </summary>
+    /// <param name="id">List ID</param>
+    /// <returns>List statistics including item counts and collaborator count</returns>
+    [HttpGet("{id}/stats")]
+    [ProducesResponseType(typeof(ListStatsDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ListStatsDto>> GetListStats(Guid id)
+    {
+        var userId = GetCurrentUserId();
+        if (userId == Guid.Empty)
+            return Unauthorized();
+
+        var query = new GetListStatsQuery
+        {
+            UserId = userId,
+            ListId = id
+        };
+
+        var stats = await _mediator.Send(query);
+        return Ok(stats);
+    }
+
+    /// <summary>
+    /// Get purchase history for a specific list
+    /// </summary>
+    /// <param name="id">List ID</param>
+    /// <param name="limit">Maximum number of purchases to return (default: 50, max: 200)</param>
+    /// <returns>List of purchased items with details</returns>
+    [HttpGet("{id}/history")]
+    [ProducesResponseType(typeof(List<PurchaseHistoryDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<List<PurchaseHistoryDto>>> GetListPurchaseHistory(Guid id, [FromQuery] int? limit = 50)
+    {
+        // Validate limit
+        if (limit.HasValue && (limit.Value < 1 || limit.Value > 200))
+        {
+            return BadRequest(new
+            {
+                StatusCode = 400,
+                Message = "Limit must be between 1 and 200.",
+                Errors = new[]
+                {
+                    new { Property = "limit", Message = "Limit must be between 1 and 200." }
+                }
+            });
+        }
+
+        var userId = GetCurrentUserId();
+        if (userId == Guid.Empty)
+            return Unauthorized();
+
+        var query = new GetListPurchaseHistoryQuery
+        {
+            UserId = userId,
+            ListId = id,
+            Limit = limit
+        };
+
+        var history = await _mediator.Send(query);
+        return Ok(history);
+    }
+
+    /// <summary>
+    /// Get activity log for a specific list
+    /// </summary>
+    /// <param name="id">List ID</param>
+    /// <param name="limit">Maximum number of activities to return (default: 20, max: 100)</param>
+    /// <returns>List of recent activities</returns>
+    [HttpGet("{id}/activity")]
+    [ProducesResponseType(typeof(List<ListActivityDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<List<ListActivityDto>>> GetListActivity(Guid id, [FromQuery] int? limit = 20)
+    {
+        // Validate limit
+        if (limit.HasValue && (limit.Value < 1 || limit.Value > 100))
+        {
+            return BadRequest(new
+            {
+                StatusCode = 400,
+                Message = "Limit must be between 1 and 100.",
+                Errors = new[]
+                {
+                    new { Property = "limit", Message = "Limit must be between 1 and 100." }
+                }
+            });
+        }
+
+        var userId = GetCurrentUserId();
+        if (userId == Guid.Empty)
+            return Unauthorized();
+
+        var query = new GetListActivityQuery
+        {
+            UserId = userId,
+            ListId = id,
+            Limit = limit
+        };
+
+        var activity = await _mediator.Send(query);
+        return Ok(activity);
     }
 
     private Guid GetCurrentUserId()
