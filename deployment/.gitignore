@@ -1,0 +1,11 @@
+# Azure deployment configuration (contains sensitive credentials)
+azure-config.env
+
+# Deployment artifacts
+*.zip
+publish/
+
+# Local testing
+.env.local
+.env.production.local
+

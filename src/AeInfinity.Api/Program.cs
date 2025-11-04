@@ -79,15 +79,13 @@ await app.InitializeDatabaseAsync();
 // Configure the HTTP request pipeline
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
-if (app.Environment.IsDevelopment())
+// Enable Swagger for all environments (Development and Production)
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "AE Infinity API v1");
-        c.RoutePrefix = string.Empty; // Swagger at root
-    });
-}
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "AE Infinity API v1");
+    c.RoutePrefix = string.Empty; // Swagger at root
+});
 
 app.UseHttpsRedirection();
 app.UseCors("AllowAll");
