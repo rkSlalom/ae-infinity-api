@@ -119,3 +119,8 @@ appsettings.*.json
 !appsettings.json
 !appsettings.Development.json
 
+
+# OpenSpec symlinks (point to context repo)
+openspec/project.md
+openspec/AGENTS.md
+openspec/specs
