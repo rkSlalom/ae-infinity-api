@@ -617,13 +617,14 @@ This document outlines a phased implementation approach for the AE Infinity coll
 - Minimum query length enforced
 
 ### Deliverables:
-- [ ] 4 queries with handlers
-- [ ] SearchController with 3 endpoints
-- [ ] List-specific search endpoint
-- [ ] Pagination implemented
-- [ ] All search scenarios tested
+- [x] 2 queries with handlers (SearchGlobalQuery handles lists/items with scope, SearchListItemsQuery)
+- [x] SearchController with 1 endpoint (GET /search with scope parameter)
+- [x] List-specific search endpoint (GET /lists/{listId}/items/search)
+- [x] Pagination implemented
+- [x] All search scenarios tested
 
-**Estimated Time:** 4-5 hours
+**Estimated Time:** 4-5 hours  
+**Status:** ✅ **COMPLETED**
 
 ---
 

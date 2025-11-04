@@ -7,6 +7,7 @@ using AeInfinity.Application.Features.ListItems.Commands.MarkItemUnpurchased;
 using AeInfinity.Application.Features.ListItems.Commands.UpdateListItem;
 using AeInfinity.Application.Features.ListItems.Queries.GetListItemById;
 using AeInfinity.Application.Features.ListItems.Queries.GetListItems;
+using AeInfinity.Application.Features.Search.Queries.SearchListItems;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -268,6 +269,51 @@ public class ListItemsController : BaseApiController
 
         await _mediator.Send(command);
         return NoContent();
+    }
+
+    /// <summary>
+    /// Search items within a specific list
+    /// </summary>
+    /// <param name="listId">List ID</param>
+    /// <param name="q">Search query (minimum 2 characters)</param>
+    /// <returns>List of matching items</returns>
+    [HttpGet("/api/lists/{listId}/items/search")]
+    [ProducesResponseType(typeof(List<ItemSearchResultDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<List<ItemSearchResultDto>>> SearchListItems(
+        Guid listId,
+        [FromQuery] string q)
+    {
+        // Validate query length
+        if (string.IsNullOrWhiteSpace(q) || q.Length < 2)
+        {
+            return BadRequest(new
+            {
+                StatusCode = 400,
+                Message = "Search query must be at least 2 characters long.",
+                Errors = new[]
+                {
+                    new { Property = "q", Message = "Search query must be at least 2 characters long." }
+                }
+            });
+        }
+
+        var userId = GetCurrentUserId();
+        if (userId == Guid.Empty)
+            return Unauthorized();
+
+        var query = new SearchListItemsQuery
+        {
+            UserId = userId,
+            ListId = listId,
+            Query = q
+        };
+
+        var items = await _mediator.Send(query);
+        return Ok(items);
     }
 
     private Guid GetCurrentUserId()
