@@ -9,11 +9,16 @@ public class UpdateListCommandHandler : IRequestHandler<UpdateListCommand, Unit>
 {
     private readonly IApplicationDbContext _context;
     private readonly IListPermissionService _permissionService;
+    private readonly IRealtimeNotificationService _realtimeService;
 
-    public UpdateListCommandHandler(IApplicationDbContext context, IListPermissionService permissionService)
+    public UpdateListCommandHandler(
+        IApplicationDbContext context, 
+        IListPermissionService permissionService,
+        IRealtimeNotificationService realtimeService)
     {
         _context = context;
         _permissionService = permissionService;
+        _realtimeService = realtimeService;
     }
 
     public async Task<Unit> Handle(UpdateListCommand request, CancellationToken cancellationToken)
@@ -37,6 +42,16 @@ public class UpdateListCommandHandler : IRequestHandler<UpdateListCommand, Unit>
         list.Description = request.Description;
 
         await _context.SaveChangesAsync(cancellationToken);
+
+        // Broadcast list updated event to SignalR clients
+        await _realtimeService.NotifyListUpdatedAsync(list.Id, new
+        {
+            Id = list.Id,
+            Name = list.Name,
+            Description = list.Description,
+            OwnerId = list.OwnerId,
+            UpdatedAt = DateTime.UtcNow
+        });
 
         return Unit.Value;
     }

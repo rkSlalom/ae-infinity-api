@@ -9,11 +9,16 @@ public class UnarchiveListCommandHandler : IRequestHandler<UnarchiveListCommand,
 {
     private readonly IApplicationDbContext _context;
     private readonly IListPermissionService _permissionService;
+    private readonly IRealtimeNotificationService _realtimeService;
 
-    public UnarchiveListCommandHandler(IApplicationDbContext context, IListPermissionService permissionService)
+    public UnarchiveListCommandHandler(
+        IApplicationDbContext context, 
+        IListPermissionService permissionService,
+        IRealtimeNotificationService realtimeService)
     {
         _context = context;
         _permissionService = permissionService;
+        _realtimeService = realtimeService;
     }
 
     public async Task<Unit> Handle(UnarchiveListCommand request, CancellationToken cancellationToken)
@@ -43,6 +48,9 @@ public class UnarchiveListCommandHandler : IRequestHandler<UnarchiveListCommand,
         list.ArchivedBy = null;
 
         await _context.SaveChangesAsync(cancellationToken);
+
+        // Broadcast list unarchived event to SignalR clients
+        await _realtimeService.NotifyListArchivedAsync(list.Id, false);
 
         return Unit.Value;
     }

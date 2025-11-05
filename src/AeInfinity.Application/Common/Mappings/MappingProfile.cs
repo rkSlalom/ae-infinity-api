@@ -1,5 +1,7 @@
 using AutoMapper;
+using AeInfinity.Application.Common.Interfaces;
 using AeInfinity.Application.Common.Models.DTOs;
+using AeInfinity.Application.Features.ListItems.Contracts;
 using AeInfinity.Domain.Entities;
 
 namespace AeInfinity.Application.Common.Mappings;
@@ -42,6 +44,9 @@ public class MappingProfile : Profile
         CreateMap<ListItem, ListItemDto>()
             .ForMember(dest => dest.Creator, opt => opt.Ignore()); // Creator loaded separately in queries if needed
         CreateMap<ListItem, ListItemBasicDto>();
+        
+        // Autocomplete mappings
+        CreateMap<AutocompleteSuggestion, AutocompleteSuggestionDto>();
     }
 }
 

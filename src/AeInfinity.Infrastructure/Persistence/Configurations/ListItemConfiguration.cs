@@ -8,84 +8,95 @@ public class ListItemConfiguration : IEntityTypeConfiguration<ListItem>
 {
     public void Configure(EntityTypeBuilder<ListItem> builder)
     {
-        builder.HasKey(li => li.Id);
-
-        builder.Property(li => li.ListId)
-            .IsRequired();
-
-        builder.Property(li => li.Name)
+        builder.ToTable("ListItems");
+        
+        builder.HasKey(i => i.Id);
+        
+        // Properties
+        builder.Property(i => i.Name)
             .IsRequired()
-            .HasMaxLength(200);
-
-        builder.Property(li => li.Quantity)
+            .HasMaxLength(100);
+        
+        builder.Property(i => i.Quantity)
             .IsRequired()
-            .HasPrecision(10, 2)
-            .HasDefaultValue(1.0m);
-
-        builder.Property(li => li.Unit)
+            .HasDefaultValue(1)
+            .HasColumnType("decimal(18,2)");
+        
+        builder.Property(i => i.Unit)
             .HasMaxLength(50);
-
-        builder.Property(li => li.CategoryId)
-            .IsRequired();
-
-        builder.Property(li => li.Notes)
-            .HasMaxLength(1000);
-
-        builder.Property(li => li.ImageUrl)
+        
+        builder.Property(i => i.Notes)
             .HasMaxLength(500);
-
-        builder.Property(li => li.IsPurchased)
+        
+        builder.Property(i => i.IsPurchased)
             .IsRequired()
             .HasDefaultValue(false);
-
-        builder.Property(li => li.Position)
+        
+        builder.Property(i => i.Position)
             .IsRequired()
             .HasDefaultValue(0);
-
-        // Indexes
-        builder.HasIndex(li => li.ListId)
-            .HasFilter("[IsDeleted] = 0");
-
-        builder.HasIndex(li => li.CategoryId)
-            .HasFilter("[IsDeleted] = 0");
-
-        builder.HasIndex(li => li.IsPurchased)
-            .HasFilter("[IsDeleted] = 0");
-
-        builder.HasIndex(li => new { li.ListId, li.Position })
-            .HasFilter("[IsDeleted] = 0");
-
-        builder.HasIndex(li => li.CreatedBy)
-            .HasFilter("[IsDeleted] = 0");
-
-        builder.HasIndex(li => li.IsDeleted);
-
-        builder.HasIndex(li => li.Name)
-            .HasFilter("[IsDeleted] = 0");
-
-        // Query filter for soft delete
-        builder.HasQueryFilter(li => !li.IsDeleted);
-
+        
+        builder.Property(i => i.IsDeleted)
+            .IsRequired()
+            .HasDefaultValue(false);
+        
+        builder.Property(i => i.CreatedAt)
+            .IsRequired();
+        
+        builder.Property(i => i.UpdatedAt)
+            .IsRequired();
+        
         // Relationships
-        builder.HasOne(li => li.List)
+        builder.HasOne(i => i.List)
             .WithMany(l => l.Items)
-            .HasForeignKey(li => li.ListId)
+            .HasForeignKey(i => i.ListId)
             .OnDelete(DeleteBehavior.Cascade);
-
-        builder.HasOne(li => li.Category)
-            .WithMany(c => c.ListItems)
-            .HasForeignKey(li => li.CategoryId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasOne(li => li.PurchasedByUser)
+        
+        builder.HasOne(i => i.Category)
             .WithMany()
-            .HasForeignKey(li => li.PurchasedBy)
+            .HasForeignKey(i => i.CategoryId)
+            .OnDelete(DeleteBehavior.SetNull);
+        
+        builder.HasOne(i => i.Creator)
+            .WithMany()
+            .HasForeignKey(i => i.CreatedBy)
             .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasOne(li => li.Creator)
-            .WithMany(u => u.CreatedItems)
-            .HasForeignKey(li => li.CreatedBy)
-            .OnDelete(DeleteBehavior.Restrict);
+        
+        builder.HasOne(i => i.PurchasedByUser)
+            .WithMany()
+            .HasForeignKey(i => i.PurchasedBy)
+            .OnDelete(DeleteBehavior.SetNull);
+        
+        builder.HasOne(i => i.UpdatedByUser)
+            .WithMany()
+            .HasForeignKey(i => i.UpdatedBy)
+            .OnDelete(DeleteBehavior.SetNull);
+        
+        builder.HasOne(i => i.DeletedBy)
+            .WithMany()
+            .HasForeignKey(i => i.DeletedById)
+            .OnDelete(DeleteBehavior.SetNull);
+        
+        // Indexes
+        builder.HasIndex(i => i.ListId)
+            .HasDatabaseName("IX_ListItems_ListId");
+        
+        builder.HasIndex(i => i.IsDeleted)
+            .HasDatabaseName("IX_ListItems_IsDeleted");
+        
+        builder.HasIndex(i => new { i.ListId, i.CategoryId })
+            .HasDatabaseName("IX_ListItems_ListId_CategoryId");
+        
+        builder.HasIndex(i => new { i.ListId, i.IsPurchased })
+            .HasDatabaseName("IX_ListItems_ListId_IsPurchased");
+        
+        builder.HasIndex(i => new { i.ListId, i.Position })
+            .HasDatabaseName("IX_ListItems_ListId_Position");
+        
+        builder.HasIndex(i => new { i.CreatedBy, i.Name })
+            .HasDatabaseName("IX_ListItems_CreatedBy_Name");
+        
+        // Global query filter for soft delete
+        builder.HasQueryFilter(i => !i.IsDeleted);
     }
 }
-

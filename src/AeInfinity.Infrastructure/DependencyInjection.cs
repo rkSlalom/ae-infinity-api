@@ -40,6 +40,7 @@ public static class DependencyInjection
 
         // Register repositories
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+        services.AddScoped<IListItemRepository, ListItemRepository>();
 
         // Register services
         services.AddScoped<IJwtTokenService, JwtTokenService>();

@@ -13,7 +13,9 @@ public interface IRealtimeNotificationService
     Task NotifyItemPurchasedStatusChangedAsync<T>(Guid listId, T eventData);
 
     // List Events
+    Task NotifyListCreatedAsync(Guid listId, object listData);
     Task NotifyListUpdatedAsync(Guid listId, object listData);
+    Task NotifyListDeletedAsync(Guid listId);
     Task NotifyListArchivedAsync(Guid listId, bool isArchived);
     Task NotifyItemsReorderedAsync(Guid listId, IEnumerable<(Guid ItemId, int Position)> reorderedItems);
 

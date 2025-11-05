@@ -58,12 +58,28 @@ public class RealtimeNotificationService : IRealtimeNotificationService
             .SendAsync("ItemPurchasedStatusChanged", eventData);
     }
 
+    public async Task NotifyListCreatedAsync(Guid listId, object listData)
+    {
+        _logger.LogInformation("Broadcasting ListCreated event for list {ListId} to all connected users", listId);
+
+        // Broadcast to ALL connected users (dashboard-level event)
+        await _hubContext.Clients
+            .All
+            .SendAsync("ListCreated", new
+            {
+                ListId = listId,
+                List = listData,
+                Timestamp = DateTime.UtcNow
+            });
+    }
+
     public async Task NotifyListUpdatedAsync(Guid listId, object listData)
     {
-        _logger.LogInformation("Broadcasting ListUpdated event for list {ListId}", listId);
+        _logger.LogInformation("Broadcasting ListUpdated event for list {ListId} to all connected users", listId);
 
+        // Broadcast to ALL connected users (dashboard-level event)
         await _hubContext.Clients
-            .Group(GetListGroupName(listId))
+            .All
             .SendAsync("ListUpdated", new
             {
                 ListId = listId,
@@ -72,13 +88,28 @@ public class RealtimeNotificationService : IRealtimeNotificationService
             });
     }
 
+    public async Task NotifyListDeletedAsync(Guid listId)
+    {
+        _logger.LogInformation("Broadcasting ListDeleted event for list {ListId} to all connected users", listId);
+
+        // Broadcast to ALL connected users (dashboard-level event)
+        await _hubContext.Clients
+            .All
+            .SendAsync("ListDeleted", new
+            {
+                ListId = listId,
+                Timestamp = DateTime.UtcNow
+            });
+    }
+
     public async Task NotifyListArchivedAsync(Guid listId, bool isArchived)
     {
-        _logger.LogInformation("Broadcasting ListArchived event for list {ListId}, archived: {IsArchived}", 
+        _logger.LogInformation("Broadcasting ListArchived event for list {ListId}, archived: {IsArchived} to all connected users", 
             listId, isArchived);
 
+        // Broadcast to ALL connected users (dashboard-level event)
         await _hubContext.Clients
-            .Group(GetListGroupName(listId))
+            .All
             .SendAsync("ListArchived", new
             {
                 ListId = listId,

@@ -9,11 +9,16 @@ public class ArchiveListCommandHandler : IRequestHandler<ArchiveListCommand, Uni
 {
     private readonly IApplicationDbContext _context;
     private readonly IListPermissionService _permissionService;
+    private readonly IRealtimeNotificationService _realtimeService;
 
-    public ArchiveListCommandHandler(IApplicationDbContext context, IListPermissionService permissionService)
+    public ArchiveListCommandHandler(
+        IApplicationDbContext context, 
+        IListPermissionService permissionService,
+        IRealtimeNotificationService realtimeService)
     {
         _context = context;
         _permissionService = permissionService;
+        _realtimeService = realtimeService;
     }
 
     public async Task<Unit> Handle(ArchiveListCommand request, CancellationToken cancellationToken)
@@ -43,6 +48,9 @@ public class ArchiveListCommandHandler : IRequestHandler<ArchiveListCommand, Uni
         list.ArchivedBy = request.UserId;
 
         await _context.SaveChangesAsync(cancellationToken);
+
+        // Broadcast list archived event to SignalR clients
+        await _realtimeService.NotifyListArchivedAsync(list.Id, true);
 
         return Unit.Value;
     }

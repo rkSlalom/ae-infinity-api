@@ -1,6 +1,8 @@
 using System.Security.Claims;
 using AeInfinity.Application.Common.Models.DTOs;
-using AeInfinity.Application.Features.ListItems.Commands.CreateListItem;
+using AeInfinity.Application.Features.ListItems.Commands.CreateItem;
+using AeInfinity.Application.Features.ListItems.Commands.ReorderItems;
+using AeInfinity.Application.Features.ListItems.Contracts;
 using AeInfinity.Application.Features.ListItems.Commands.DeleteListItem;
 using AeInfinity.Application.Features.ListItems.Commands.MarkItemPurchased;
 using AeInfinity.Application.Features.ListItems.Commands.MarkItemUnpurchased;
@@ -30,19 +32,19 @@ public class ListItemsController : BaseApiController
     }
 
     /// <summary>
-    /// Get all items in a shopping list with optional filtering
+    /// Get all items in a shopping list with optional filtering and metadata
     /// </summary>
     /// <param name="listId">List ID</param>
     /// <param name="categoryId">Filter by category</param>
     /// <param name="isPurchased">Filter by purchase status</param>
     /// <param name="createdBy">Filter by creator</param>
-    /// <returns>List of items</returns>
+    /// <returns>Items with metadata (total count, purchased count, etc.)</returns>
     [HttpGet("/api/lists/{listId}/items")]
-    [ProducesResponseType(typeof(List<ListItemDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ItemsListResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<List<ListItemDto>>> GetListItems(
+    public async Task<ActionResult<ItemsListResponse>> GetListItems(
         Guid listId,
         [FromQuery] Guid? categoryId = null,
         [FromQuery] bool? isPurchased = null,
@@ -61,8 +63,8 @@ public class ListItemsController : BaseApiController
             CreatedBy = createdBy
         };
 
-        var items = await _mediator.Send(query);
-        return Ok(items);
+        var response = await _mediator.Send(query);
+        return Ok(response);
     }
 
     /// <summary>
@@ -100,11 +102,11 @@ public class ListItemsController : BaseApiController
     /// <param name="request">Item creation data</param>
     /// <returns>Created item ID</returns>
     [HttpPost("/api/lists/{listId}/items")]
-    [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ListItemDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<ActionResult<Guid>> CreateListItem(Guid listId, [FromBody] CreateListItemRequest request)
+    public async Task<ActionResult<ListItemDto>> CreateListItem(Guid listId, [FromBody] CreateItemRequest request)
     {
         _logger.LogInformation("=== CreateListItem START ===");
         _logger.LogInformation("ListId: {ListId}", listId);
@@ -120,7 +122,7 @@ public class ListItemsController : BaseApiController
         }
 
         _logger.LogInformation("Creating command...");
-        var command = new CreateListItemCommand
+        var command = new CreateItemCommand
         {
             ListId = listId,
             UserId = userId,
@@ -137,9 +139,9 @@ public class ListItemsController : BaseApiController
 
         try
         {
-            var itemId = await _mediator.Send(command);
-            _logger.LogInformation("Item created successfully with ID: {ItemId}", itemId);
-            return CreatedAtAction(nameof(GetListItemById), new { listId, itemId }, itemId);
+            var item = await _mediator.Send(command);
+            _logger.LogInformation("Item created successfully with ID: {ItemId}", item.Id);
+            return CreatedAtAction(nameof(GetListItemById), new { listId, itemId = item.Id }, item);
         }
         catch (Exception ex)
         {
@@ -207,6 +209,38 @@ public class ListItemsController : BaseApiController
             ListId = listId,
             ItemId = itemId,
             UserId = userId
+        };
+
+        await _mediator.Send(command);
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Reorder items in a list by updating their positions
+    /// </summary>
+    /// <param name="listId">List ID</param>
+    /// <param name="request">List of items with their new positions</param>
+    /// <returns>Success status</returns>
+    [HttpPatch("/api/lists/{listId}/items/reorder")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> ReorderItems(Guid listId, [FromBody] ReorderItemsRequest request)
+    {
+        var userId = GetCurrentUserId();
+        if (userId == Guid.Empty)
+            return Unauthorized();
+
+        var command = new ReorderItemsCommand
+        {
+            ListId = listId,
+            UserId = userId,
+            Items = request.Items.Select(i => new AeInfinity.Application.Features.ListItems.Commands.ReorderItems.ItemPosition
+            {
+                ItemId = i.ItemId,
+                Position = i.Position
+            }).ToList()
         };
 
         await _mediator.Send(command);
@@ -347,6 +381,23 @@ public class UpdateListItemRequest
     public Guid CategoryId { get; set; }
     public string? Notes { get; set; }
     public string? ImageUrl { get; set; }
+    public int Position { get; set; }
+}
+
+/// <summary>
+/// Request model for reordering list items
+/// </summary>
+public class ReorderItemsRequest
+{
+    public List<ItemPositionDto> Items { get; set; } = new();
+}
+
+/// <summary>
+/// Item position DTO for reordering
+/// </summary>
+public class ItemPositionDto
+{
+    public Guid ItemId { get; set; }
     public int Position { get; set; }
 }
 

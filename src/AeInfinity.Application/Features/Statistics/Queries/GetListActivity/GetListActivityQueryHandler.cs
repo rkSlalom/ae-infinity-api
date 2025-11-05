@@ -75,7 +75,7 @@ public class GetListActivityQueryHandler : IRequestHandler<GetListActivityQuery,
                 UserDisplayName = x.User.DisplayName,
                 ItemName = x.Item.Name,
                 Description = $"Updated {x.Item.Name}",
-                Timestamp = x.Item.UpdatedAt!.Value
+                Timestamp = x.Item.UpdatedAt
             })
             .ToListAsync(cancellationToken);
 
@@ -103,18 +103,19 @@ public class GetListActivityQueryHandler : IRequestHandler<GetListActivityQuery,
 
         // Get deleted items (soft deleted)
         var itemDeletions = await _context.ListItems
+            .IgnoreQueryFilters()
             .Where(li => li.ListId == request.ListId && 
                         li.IsDeleted && 
-                        li.DeletedBy.HasValue)
+                        li.DeletedById.HasValue)
             .Join(_context.Users,
-                li => li.DeletedBy!.Value,
+                li => li.DeletedById!.Value,
                 u => u.Id,
                 (li, u) => new { Item = li, User = u })
             .Select(x => new ListActivityDto
             {
                 Id = x.Item.Id,
                 ActivityType = "item_deleted",
-                UserId = x.Item.DeletedBy!.Value,
+                UserId = x.Item.DeletedById!.Value,
                 UserDisplayName = x.User.DisplayName,
                 ItemName = x.Item.Name,
                 Description = $"Removed {x.Item.Name} from the list",

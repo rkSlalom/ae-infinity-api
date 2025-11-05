@@ -1,9 +1,9 @@
-using AeInfinity.Application.Common.Models.DTOs;
+using AeInfinity.Application.Features.ListItems.Contracts;
 using MediatR;
 
 namespace AeInfinity.Application.Features.ListItems.Queries.GetListItems;
 
-public class GetListItemsQuery : IRequest<List<ListItemDto>>
+public class GetListItemsQuery : IRequest<ItemsListResponse>
 {
     public Guid ListId { get; set; }
     public Guid UserId { get; set; }

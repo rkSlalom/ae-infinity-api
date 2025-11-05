@@ -9,11 +9,16 @@ public class DeleteListCommandHandler : IRequestHandler<DeleteListCommand, Unit>
 {
     private readonly IApplicationDbContext _context;
     private readonly IListPermissionService _permissionService;
+    private readonly IRealtimeNotificationService _realtimeService;
 
-    public DeleteListCommandHandler(IApplicationDbContext context, IListPermissionService permissionService)
+    public DeleteListCommandHandler(
+        IApplicationDbContext context, 
+        IListPermissionService permissionService,
+        IRealtimeNotificationService realtimeService)
     {
         _context = context;
         _permissionService = permissionService;
+        _realtimeService = realtimeService;
     }
 
     public async Task<Unit> Handle(DeleteListCommand request, CancellationToken cancellationToken)
@@ -33,9 +38,14 @@ public class DeleteListCommandHandler : IRequestHandler<DeleteListCommand, Unit>
             throw new NotFoundException("List", request.ListId);
         }
 
+        var listId = list.Id;
+
         // Soft delete
         _context.Lists.Remove(list);
         await _context.SaveChangesAsync(cancellationToken);
+
+        // Broadcast list deleted event to SignalR clients
+        await _realtimeService.NotifyListDeletedAsync(listId);
 
         return Unit.Value;
     }

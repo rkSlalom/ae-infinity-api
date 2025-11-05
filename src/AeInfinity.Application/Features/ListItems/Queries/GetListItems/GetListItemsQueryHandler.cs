@@ -1,5 +1,6 @@
 using AeInfinity.Application.Common.Interfaces;
 using AeInfinity.Application.Common.Models.DTOs;
+using AeInfinity.Application.Features.ListItems.Contracts;
 using AeInfinity.Domain.Exceptions;
 using AutoMapper;
 using MediatR;
@@ -7,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AeInfinity.Application.Features.ListItems.Queries.GetListItems;
 
-public class GetListItemsQueryHandler : IRequestHandler<GetListItemsQuery, List<ListItemDto>>
+public class GetListItemsQueryHandler : IRequestHandler<GetListItemsQuery, ItemsListResponse>
 {
     private readonly IApplicationDbContext _context;
     private readonly IListPermissionService _permissionService;
@@ -23,7 +24,7 @@ public class GetListItemsQueryHandler : IRequestHandler<GetListItemsQuery, List<
         _mapper = mapper;
     }
 
-    public async Task<List<ListItemDto>> Handle(GetListItemsQuery request, CancellationToken cancellationToken)
+    public async Task<ItemsListResponse> Handle(GetListItemsQuery request, CancellationToken cancellationToken)
     {
         // Check if user has access to this list
         var hasAccess = await _permissionService.CanUserAccessListAsync(request.UserId, request.ListId, cancellationToken);
@@ -31,6 +32,9 @@ public class GetListItemsQueryHandler : IRequestHandler<GetListItemsQuery, List<
         {
             throw new ForbiddenException("You do not have access to this list.");
         }
+
+        // Get user's permission level
+        var permission = await _permissionService.GetUserRoleForListAsync(request.UserId, request.ListId, cancellationToken);
 
         var query = _context.ListItems
             .Include(li => li.Category)
@@ -59,7 +63,25 @@ public class GetListItemsQueryHandler : IRequestHandler<GetListItemsQuery, List<
             .ThenBy(li => li.CreatedAt)
             .ToListAsync(cancellationToken);
 
-        return _mapper.Map<List<ListItemDto>>(items);
+        var itemDtos = _mapper.Map<List<ListItemDto>>(items);
+
+        // Calculate metadata
+        var totalCount = items.Count;
+        var purchasedCount = items.Count(i => i.IsPurchased);
+        var unpurchasedCount = totalCount - purchasedCount;
+
+        return new ItemsListResponse
+        {
+            Items = itemDtos,
+            Metadata = new ItemsMetadata
+            {
+                TotalCount = totalCount,
+                PurchasedCount = purchasedCount,
+                UnpurchasedCount = unpurchasedCount,
+                AllPurchased = totalCount > 0 && purchasedCount == totalCount
+            },
+            Permission = permission ?? "Viewer"
+        };
     }
 }
 
