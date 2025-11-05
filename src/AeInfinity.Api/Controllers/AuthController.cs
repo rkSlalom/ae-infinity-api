@@ -1,6 +1,7 @@
 using AeInfinity.Application.Common.Models.DTOs;
 using AeInfinity.Application.Features.Auth.Commands.Login;
 using AeInfinity.Application.Features.Auth.Commands.Logout;
+using AeInfinity.Application.Features.Auth.Commands.Register;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -38,6 +39,27 @@ public class AuthController : BaseApiController
 
         var result = await _mediator.Send(command);
         return Ok(result);
+    }
+
+    /// <summary>
+    /// User registration
+    /// </summary>
+    /// <param name="request">Registration information</param>
+    /// <returns>JWT token and user information (auto-login)</returns>
+    [HttpPost("register")]
+    [ProducesResponseType(typeof(LoginResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<LoginResponse>> Register([FromBody] RegisterRequest request)
+    {
+        var command = new RegisterCommand
+        {
+            Email = request.Email,
+            Password = request.Password,
+            DisplayName = request.DisplayName
+        };
+
+        var result = await _mediator.Send(command);
+        return CreatedAtAction(nameof(Register), result);
     }
 
     /// <summary>
