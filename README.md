@@ -82,26 +82,52 @@ This project follows **Clean Architecture** with clear separation of concerns ac
 
 ## 🛠️ Getting Started
 
-### 1. Clone the Repository
+### 1. Clone All Repositories
+
+This project uses OpenSpec for spec-driven development with symlinks to the context repo.
 
 ```bash
+# Clone all three repos side-by-side
+git clone https://github.com/rkSlalom/ae-infinity-context.git
 git clone https://github.com/rkSlalom/ae-infinity-api.git
-cd ae-infinity-api
+git clone https://github.com/dallen4/ae-infinity-ui.git
 ```
 
-### 2. Restore Dependencies
+### 2. Setup OpenSpec (Required)
+
+```bash
+cd ae-infinity-api
+./setup-openspec.sh
+```
+
+This creates symlinks to shared specifications in the context repo.
+
+**Platform Notes:**
+- **macOS/Linux:** Symlinks work automatically ✅
+- **Windows:** Enable symlinks before cloning:
+  ```bash
+  git config --global core.symlinks true
+  ```
+
+**Verify Setup:**
+```bash
+ls -la openspec/  # Should show symlinks (→)
+cat openspec/project.md  # Should display content
+```
+
+### 3. Restore Dependencies
 
 ```bash
 dotnet restore
 ```
 
-### 3. Build the Solution
+### 4. Build the Solution
 
 ```bash
 dotnet build
 ```
 
-### 4. Run the Application
+### 5. Run the Application
 
 ```bash
 cd src/AeInfinity.Api
