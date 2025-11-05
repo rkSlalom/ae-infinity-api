@@ -45,6 +45,10 @@ public static class DependencyInjection
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<IPasswordHasher, PasswordHasherService>();
         services.AddScoped<IListPermissionService, ListPermissionService>();
+        services.AddSingleton<ICacheService, MemoryCacheService>();
+        
+        // Add Memory Cache for statistics caching
+        services.AddMemoryCache();
 
         return services;
     }

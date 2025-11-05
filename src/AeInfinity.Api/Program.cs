@@ -42,6 +42,12 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
+// Register MediatR notification handlers from API layer (for SignalR event handlers)
+builder.Services.AddMediatR(cfg =>
+{
+    cfg.RegisterServicesFromAssembly(typeof(Program).Assembly);
+});
+
 // Add JWT Authentication
 builder.Services.AddAuthentication(options =>
 {

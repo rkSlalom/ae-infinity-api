@@ -25,9 +25,21 @@ public class UsersController : BaseApiController
     }
 
     /// <summary>
-    /// Get current authenticated user information
+    /// Get current authenticated user's complete profile
     /// </summary>
-    /// <returns>Current user details</returns>
+    /// <remarks>
+    /// Retrieves the complete profile information for the authenticated user including:
+    /// - Basic info (id, email, display name)
+    /// - Avatar URL
+    /// - Email verification status
+    /// - Account timestamps (created, last login)
+    /// 
+    /// **Authentication**: Requires valid JWT Bearer token
+    /// </remarks>
+    /// <returns>User profile with all fields</returns>
+    /// <response code="200">Returns the user's complete profile</response>
+    /// <response code="401">Invalid or missing JWT token</response>
+    /// <response code="404">User not found in database</response>
     [HttpGet("me")]
     [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -48,12 +60,26 @@ public class UsersController : BaseApiController
     }
 
     /// <summary>
-    /// Get user by ID (public profile information)
+    /// Get public profile information for any user
     /// </summary>
-    /// <param name="id">User ID</param>
-    /// <returns>User basic information</returns>
+    /// <remarks>
+    /// Returns limited public profile information (displayName, avatarUrl) for viewing collaborators.
+    /// 
+    /// **Privacy**: Does NOT expose email, statistics, or other sensitive information.
+    /// 
+    /// **Use Cases**:
+    /// - View collaborator profiles in shared lists
+    /// - Display user information in activity feeds
+    /// - Show user details when clicking on usernames
+    /// </remarks>
+    /// <param name="id">The GUID of the user to retrieve</param>
+    /// <returns>Public user profile with limited fields</returns>
+    /// <response code="200">Returns the user's public profile</response>
+    /// <response code="401">Invalid or missing JWT token</response>
+    /// <response code="404">User not found or deleted</response>
     [HttpGet("{id}")]
     [ProducesResponseType(typeof(UserBasicDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<UserBasicDto>> GetUserById(Guid id)
     {
@@ -80,12 +106,39 @@ public class UsersController : BaseApiController
     }
 
     /// <summary>
-    /// Update own user profile
+    /// Update authenticated user's profile (display name and/or avatar)
     /// </summary>
-    /// <param name="request">Profile update request</param>
-    /// <returns>No content on success</returns>
-    [HttpPut("me")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    /// <remarks>
+    /// Updates the user's profile information. Only display name and avatar URL can be modified.
+    /// 
+    /// **Validation Rules**:
+    /// - **displayName**: Required, 2-100 characters, supports Unicode/emojis
+    /// - **avatarUrl**: Optional, must be valid HTTP/HTTPS URL or null to clear
+    /// 
+    /// **Security**: 
+    /// - User ID extracted from JWT token (cannot update other users' profiles)
+    /// - Users have full autonomy over their own profiles
+    /// 
+    /// **Real-time**: 
+    /// - Broadcasts `ProfileUpdated` SignalR event to all connected clients
+    /// - Updates appear immediately in Header and collaborator lists
+    /// 
+    /// **Example Request**:
+    /// ```json
+    /// {
+    ///   "displayName": "Jane Smith 🎉",
+    ///   "avatarUrl": "https://example.com/avatar.jpg"
+    /// }
+    /// ```
+    /// </remarks>
+    /// <param name="request">Profile update request with displayName and optional avatarUrl</param>
+    /// <returns>Updated user profile</returns>
+    /// <response code="200">Profile updated successfully, returns updated UserDto</response>
+    /// <response code="400">Validation errors (display name length, invalid URL format)</response>
+    /// <response code="401">Invalid or missing JWT token</response>
+    /// <response code="404">User not found in database</response>
+    [HttpPatch("me")]
+    [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -107,7 +160,11 @@ public class UsersController : BaseApiController
 
         await _mediator.Send(command);
         
-        return NoContent();
+        // Return updated user profile
+        var query = new GetCurrentUserQuery { UserId = userId };
+        var updatedUser = await _mediator.Send(query);
+        
+        return Ok(updatedUser);
     }
 
     /// <summary>
